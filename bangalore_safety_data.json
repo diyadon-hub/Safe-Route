@@ -1,0 +1,272 @@
+[
+    {
+        "id":"0268cd3b-dc2e-41c9-8571-ea2821b31236",
+        "name":"Koramangala",
+        "latitude":12.94155,
+        "longitude":77.60791,
+        "safety_score":38,
+        "accessibility_score":72,
+        "metrics":{
+            "lighting":3,
+            "crowd_density":5,
+            "security_presence":3
+        },
+        "reviews":[
+            "Good security presence, often see police patrols.",
+            "Walking routes are generally safe, but avoid isolated areas after dark."
+        ],
+        "tier":"Needs Improvement"
+    },
+    {
+        "id":"2070bd45-b2f8-4753-a676-106444560039",
+        "name":"Indiranagar",
+        "latitude":12.97579,
+        "longitude":77.64098,
+        "safety_score":63,
+        "accessibility_score":72,
+        "metrics":{
+            "lighting":4,
+            "crowd_density":3,
+            "security_presence":4
+        },
+        "reviews":[
+            "Well-lit streets, feels safe even late at night.",
+            "Accessibility for disabled individuals could be better."
+        ],
+        "tier":"Moderate Safety"
+    },
+    {
+        "id":"164f460e-5ab8-4e89-8667-305349ed38f1",
+        "name":"Basavanagudi",
+        "latitude":12.94203,
+        "longitude":77.56065,
+        "safety_score":89,
+        "accessibility_score":58,
+        "metrics":{
+            "lighting":2,
+            "crowd_density":4,
+            "security_presence":3
+        },
+        "reviews":[
+            "Some dark patches in inner lanes, be careful.",
+            "Always bustling, which adds to the sense of safety."
+        ],
+        "tier":"High Safety"
+    },
+    {
+        "id":"7ae38394-3d9f-45d1-8c77-449a2977d23b",
+        "name":"HSR Layout",
+        "latitude":12.90641,
+        "longitude":77.63647,
+        "safety_score":50,
+        "accessibility_score":92,
+        "metrics":{
+            "lighting":2,
+            "crowd_density":4,
+            "security_presence":5
+        },
+        "reviews":[
+            "Can get very crowded during peak hours, watch your belongings.",
+            "Need more streetlights in certain sections."
+        ],
+        "tier":"Needs Improvement"
+    },
+    {
+        "id":"39559d49-0ac9-4723-bb5e-02640cbaec94",
+        "name":"Majestic",
+        "latitude":12.97954,
+        "longitude":77.57855,
+        "safety_score":89,
+        "accessibility_score":40,
+        "metrics":{
+            "lighting":3,
+            "crowd_density":4,
+            "security_presence":5
+        },
+        "reviews":[
+            "Can get very crowded during peak hours, watch your belongings.",
+            "Has improved a lot over the years, feeling much safer now."
+        ],
+        "tier":"High Safety"
+    },
+    {
+        "id":"b4ff75fc-ccda-411d-be98-fed978e380ee",
+        "name":"Whitefield",
+        "latitude":12.9661,
+        "longitude":77.75019,
+        "safety_score":70,
+        "accessibility_score":79,
+        "metrics":{
+            "lighting":1,
+            "crowd_density":2,
+            "security_presence":1
+        },
+        "reviews":[
+            "Can get very crowded during peak hours, watch your belongings.",
+            "Always bustling, which adds to the sense of safety."
+        ],
+        "tier":"Moderate Safety"
+    },
+    {
+        "id":"6809108e-a8bc-4ee6-9aa2-b2707154a03f",
+        "name":"Jayanagar",
+        "latitude":12.92411,
+        "longitude":77.57531,
+        "safety_score":36,
+        "accessibility_score":76,
+        "metrics":{
+            "lighting":4,
+            "crowd_density":2,
+            "security_presence":4
+        },
+        "reviews":[
+            "Well-lit streets, feels safe even late at night.",
+            "Always bustling, which adds to the sense of safety."
+        ],
+        "tier":"Needs Improvement"
+    },
+    {
+        "id":"538ad534-88ed-43d4-a651-ca09644fd25a",
+        "name":"Malleshwaram",
+        "latitude":13.00492,
+        "longitude":77.55897,
+        "safety_score":67,
+        "accessibility_score":60,
+        "metrics":{
+            "lighting":5,
+            "crowd_density":5,
+            "security_presence":2
+        },
+        "reviews":[
+            "Good security presence, often see police patrols.",
+            "Walking routes are generally safe, but avoid isolated areas after dark."
+        ],
+        "tier":"Moderate Safety"
+    },
+    {
+        "id":"ed6f4f3e-5201-496c-9b7e-29ca9668b8da",
+        "name":"Electronic City",
+        "latitude":12.83728,
+        "longitude":77.65921,
+        "safety_score":62,
+        "accessibility_score":94,
+        "metrics":{
+            "lighting":4,
+            "crowd_density":4,
+            "security_presence":5
+        },
+        "reviews":[
+            "Can get very crowded during peak hours, watch your belongings.",
+            "Walking routes are generally safe, but avoid isolated areas after dark."
+        ],
+        "tier":"Moderate Safety"
+    },
+    {
+        "id":"98803646-a467-4f15-820d-86b24e68a8bf",
+        "name":"BTM Layout",
+        "latitude":12.92568,
+        "longitude":77.59891,
+        "safety_score":33,
+        "accessibility_score":66,
+        "metrics":{
+            "lighting":4,
+            "crowd_density":2,
+            "security_presence":1
+        },
+        "reviews":[
+            "Some dark patches in inner lanes, be careful.",
+            "Need more streetlights in certain sections."
+        ],
+        "tier":"Needs Improvement"
+    },
+    {
+        "id":"547296e4-458b-419b-ade3-c359787a4404",
+        "name":"Banashankari",
+        "latitude":12.91791,
+        "longitude":77.53912,
+        "safety_score":77,
+        "accessibility_score":52,
+        "metrics":{
+            "lighting":5,
+            "crowd_density":5,
+            "security_presence":5
+        },
+        "reviews":[
+            "Public transport is excellent here, very accessible.",
+            "Always bustling, which adds to the sense of safety."
+        ],
+        "tier":"Moderate Safety"
+    },
+    {
+        "id":"8920c615-9f77-4b73-94cf-eabf553e22db",
+        "name":"Rajajinagar",
+        "latitude":12.99474,
+        "longitude":77.56253,
+        "safety_score":63,
+        "accessibility_score":87,
+        "metrics":{
+            "lighting":1,
+            "crowd_density":2,
+            "security_presence":3
+        },
+        "reviews":[
+            "Public transport is excellent here, very accessible.",
+            "Accessibility for disabled individuals could be better."
+        ],
+        "tier":"Moderate Safety"
+    },
+    {
+        "id":"04af48c4-49dd-46ea-bae1-eb932f021ef8",
+        "name":"Marathahalli",
+        "latitude":12.94961,
+        "longitude":77.70358,
+        "safety_score":90,
+        "accessibility_score":87,
+        "metrics":{
+            "lighting":1,
+            "crowd_density":2,
+            "security_presence":2
+        },
+        "reviews":[
+            "Some dark patches in inner lanes, be careful.",
+            "Has improved a lot over the years, feeling much safer now."
+        ],
+        "tier":"High Safety"
+    },
+    {
+        "id":"2ef59c93-0ccf-4d11-92d8-880dd53f622a",
+        "name":"Yelahanka",
+        "latitude":13.09439,
+        "longitude":77.58966,
+        "safety_score":84,
+        "accessibility_score":92,
+        "metrics":{
+            "lighting":1,
+            "crowd_density":5,
+            "security_presence":3
+        },
+        "reviews":[
+            "Some dark patches in inner lanes, be careful.",
+            "Has improved a lot over the years, feeling much safer now."
+        ],
+        "tier":"High Safety"
+    },
+    {
+        "id":"69dd8be2-6bbf-4912-b8d0-b2cef47f017a",
+        "name":"Sarjapur Road",
+        "latitude":12.92202,
+        "longitude":77.68959,
+        "safety_score":49,
+        "accessibility_score":75,
+        "metrics":{
+            "lighting":2,
+            "crowd_density":5,
+            "security_presence":4
+        },
+        "reviews":[
+            "Can get very crowded during peak hours, watch your belongings.",
+            "Has improved a lot over the years, feeling much safer now."
+        ],
+        "tier":"Needs Improvement"
+    }
+]
