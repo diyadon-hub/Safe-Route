@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SafeRoute SG — Bangalore Safety Navigator</title>
+
+  <!-- Tailwind CSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            midnight: {
+              950: '#0a0f1a',
+              900: '#0f1729',
+              800: '#152238',
+              700: '#1c2d47',
+            },
+            slate: {
+              custom: '#94a3b8',
+              muted: '#64748b',
+            },
+            accent: {
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              coral: '#fb7185',
+            },
+          },
+          fontFamily: {
+            sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+            display: ['"Outfit"', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            glow: '0 0 40px rgba(16, 185, 129, 0.15)',
+            panel: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    /* Leaflet container & custom marker pulse */
+    #map {
+      z-index: 0;
+    }
+    .leaflet-container {
+      background: #0f1729;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .safety-marker {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .safety-marker.active {
+      transform: scale(1.35);
+      box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.2), 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+    .metric-bar-fill {
+      transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .panel-enter {
+      animation: slideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    /* Custom scrollbar for sidebar list */
+    .location-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    .location-list::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    /* Score ring */
+    .score-ring {
+      transform: rotate(-90deg);
+    }
+  </style>
+</head>
+
+<body class="bg-midnight-950 text-slate-100 min-h-screen overflow-hidden font-sans antialiased">
+
+  <!-- App shell: sidebar + map + analytics -->
+  <div class="flex h-screen w-full">
+
+    <!-- ========== SIDEBAR ========== -->
+    <aside
+      id="sidebar"
+      class="w-full md:w-80 lg:w-96 flex-shrink-0 flex flex-col bg-midnight-900/95 border-r border-midnight-700/80 backdrop-blur-xl z-20 absolute md:relative inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-out max-md:shadow-panel"
+      aria-label="Navigation sidebar"
+    >
+      <!-- Brand header -->
+      <header class="p-5 pb-4 border-b border-midnight-700/60">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-emerald to-emerald-700 flex items-center justify-center shadow-glow">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="font-display font-bold text-lg tracking-tight text-white">SafeRoute SG</h1>
+            <p class="text-xs text-slate-custom">Bangalore · Micro-data safety</p>
+          </div>
+        </div>
+        <p class="text-sm leading-relaxed text-slate-custom/90">
+          <span class="text-white font-medium">SafeRoute SG:</span>
+          Empowering safe navigation through micro-data.
+        </p>
+      </header>
+
+      <!-- Search -->
+      <div class="px-5 py-4">
+        <label for="search-input" class="sr-only">Search locations</label>
+        <div class="relative">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Search neighborhoods…"
+            autocomplete="off"
+            class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-midnight-800 border border-midnight-700 text-sm text-white placeholder-slate-muted focus:outline-none focus:ring-2 focus:ring-accent-emerald/50 focus:border-accent-emerald/40 transition"
+          />
+        </div>
+      </div>
+
+      <!-- Tier filter pills -->
+      <div class="px-5 pb-3 flex flex-wrap gap-2" role="group" aria-label="Safety tier filters">
+        <button type="button" data-filter="all" class="filter-pill active px-3 py-1.5 rounded-full text-xs font-semibold border transition">
+          All
+        </button>
+        <button type="button" data-filter="High Safety" class="filter-pill px-3 py-1.5 rounded-full text-xs font-semibold border transition">
+          High Safety
+        </button>
+        <button type="button" data-filter="Moderate Safety" class="filter-pill px-3 py-1.5 rounded-full text-xs font-semibold border transition">
+          Moderate
+        </button>
+        <button type="button" data-filter="Needs Improvement" class="filter-pill px-3 py-1.5 rounded-full text-xs font-semibold border transition">
+          Needs Improvement
+        </button>
+      </div>
+
+      <!-- Legend -->
+      <div class="px-5 pb-3 flex gap-4 text-[10px] uppercase tracking-wider text-slate-muted">
+        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-accent-emerald"></span> High</span>
+        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-accent-amber"></span> Moderate</span>
+        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-accent-coral"></span> Improve</span>
+      </div>
+
+      <!-- Scrollable location list -->
+      <ul id="location-list" class="location-list flex-1 overflow-y-auto px-3 pb-4 space-y-1" role="listbox" aria-label="Locations">
+        <!-- Populated by JS -->
+      </ul>
+
+      <!-- Loading / error states -->
+      <p id="sidebar-status" class="px-5 pb-4 text-xs text-slate-muted hidden"></p>
+    </aside>
+
+    <!-- Mobile sidebar toggle -->
+    <button
+      id="sidebar-toggle"
+      type="button"
+      class="md:hidden fixed bottom-5 left-5 z-30 w-12 h-12 rounded-full bg-midnight-800 border border-midnight-700 shadow-panel flex items-center justify-center text-white"
+      aria-label="Toggle sidebar"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+    </button>
+
+    <!-- ========== MAIN: MAP + PANELS ========== -->
+    <main class="flex-1 relative flex flex-col min-w-0">
+
+      <!-- Map -->
+      <div id="map" class="flex-1 w-full min-h-[50vh] md:min-h-0" role="application" aria-label="Bangalore safety map"></div>
+
+      <!-- Detailed Analytics Panel (hidden until selection) -->
+      <section
+        id="analytics-panel"
+        class="hidden absolute top-4 right-4 bottom-4 w-full max-w-md z-[1000] panel-enter pointer-events-auto"
+        aria-live="polite"
+        aria-label="Location insights"
+      >
+        <article class="h-full flex flex-col rounded-2xl bg-midnight-900/95 backdrop-blur-xl border border-midnight-700/80 shadow-panel overflow-hidden">
+
+          <!-- Panel header -->
+          <header class="p-5 border-b border-midnight-700/60 flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-[10px] uppercase tracking-widest text-slate-muted mb-1">Location Insights</p>
+              <h2 id="panel-location-name" class="font-display font-bold text-xl text-white truncate">—</h2>
+              <span id="panel-tier-badge" class="inline-block mt-2 px-2.5 py-0.5 rounded-full text-xs font-semibold"></span>
+            </div>
+            <button
+              id="close-panel"
+              type="button"
+              class="flex-shrink-0 w-8 h-8 rounded-lg bg-midnight-800 hover:bg-midnight-700 flex items-center justify-center text-slate-custom transition"
+              aria-label="Close panel"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </header>
+
+          <!-- Scrollable body -->
+          <div class="flex-1 overflow-y-auto p-5 space-y-5">
+
+            <!-- Composite scores -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="rounded-xl bg-midnight-800/80 p-4 border border-midnight-700/50 text-center">
+                <div class="relative w-16 h-16 mx-auto mb-2">
+                  <svg class="w-16 h-16 score-ring" viewBox="0 0 36 36">
+                    <path class="text-midnight-700" stroke="currentColor" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path id="safety-ring" class="text-accent-emerald" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  </svg>
+                  <span id="panel-safety-score" class="absolute inset-0 flex items-center justify-center font-display font-bold text-lg text-white">—</span>
+                </div>
+                <p class="text-xs text-slate-muted">Safety Score</p>
+              </div>
+              <div class="rounded-xl bg-midnight-800/80 p-4 border border-midnight-700/50 text-center">
+                <div class="relative w-16 h-16 mx-auto mb-2">
+                  <svg class="w-16 h-16 score-ring" viewBox="0 0 36 36">
+                    <path class="text-midnight-700" stroke="currentColor" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path id="access-ring" class="text-sky-400" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  </svg>
+                  <span id="panel-access-score" class="absolute inset-0 flex items-center justify-center font-display font-bold text-lg text-white">—</span>
+                </div>
+                <p class="text-xs text-slate-muted">Accessibility</p>
+              </div>
+            </div>
+
+            <!-- Micro-metrics meters -->
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-muted mb-3">Micro-Metrics (1–5)</h3>
+              <div class="space-y-4" id="metrics-container">
+                <!-- Lighting -->
+                <div class="metric-row" data-metric="lighting">
+                  <div class="flex justify-between text-sm mb-1.5">
+                    <span class="text-slate-custom flex items-center gap-2">
+                      <svg class="w-4 h-4 text-amber-300" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 101.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 4.343a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707zM4 10a1 1 0 01-1 1H2a1 1 0 110-2h1a1 1 0 011 1zM8 16a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/></svg>
+                      Street Lighting
+                    </span>
+                    <span class="metric-value font-mono text-white font-medium">—</span>
+                  </div>
+                  <div class="h-2 rounded-full bg-midnight-700 overflow-hidden">
+                    <div class="metric-bar-fill h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-300" style="width: 0%"></div>
+                  </div>
+                </div>
+                <!-- Crowd -->
+                <div class="metric-row" data-metric="crowd_density">
+                  <div class="flex justify-between text-sm mb-1.5">
+                    <span class="text-slate-custom flex items-center gap-2">
+                      <svg class="w-4 h-4 text-sky-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+                      Crowd Density
+                    </span>
+                    <span class="metric-value font-mono text-white font-medium">—</span>
+                  </div>
+                  <div class="h-2 rounded-full bg-midnight-700 overflow-hidden">
+                    <div class="metric-bar-fill h-full rounded-full bg-gradient-to-r from-sky-600 to-sky-300" style="width: 0%"></div>
+                  </div>
+                </div>
+                <!-- Security -->
+                <div class="metric-row" data-metric="security_presence">
+                  <div class="flex justify-between text-sm mb-1.5">
+                    <span class="text-slate-custom flex items-center gap-2">
+                      <svg class="w-4 h-4 text-accent-emerald" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                      Security Presence
+                    </span>
+                    <span class="metric-value font-mono text-white font-medium">—</span>
+                  </div>
+                  <div class="h-2 rounded-full bg-midnight-700 overflow-hidden">
+                    <div class="metric-bar-fill h-full rounded-full bg-gradient-to-r from-emerald-600 to-accent-emerald" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Community reviews -->
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-muted mb-2">Community Signals</h3>
+              <ul id="panel-reviews" class="space-y-2 text-sm text-slate-custom">
+                <!-- Populated by JS -->
+              </ul>
+            </div>
+          </div>
+
+          <!-- Monetization footer -->
+          <footer class="p-4 border-t border-midnight-700/60 bg-midnight-800/40">
+            <p class="text-xs text-slate-muted leading-relaxed">
+              💡 <span class="text-slate-custom font-medium">Premium Integration:</span>
+              Real estate &amp; PG providers can license this API score.
+            </p>
+          </footer>
+        </article>
+      </section>
+
+      <!-- Empty state overlay when no selection (desktop hint) -->
+      <div
+        id="map-hint"
+        class="hidden md:flex absolute bottom-6 left-1/2 -translate-x-1/2 z-[500] px-4 py-2 rounded-full bg-midnight-900/90 border border-midnight-700 text-xs text-slate-custom backdrop-blur pointer-events-none"
+      >
+        Click a marker or list item to view detailed analytics
+      </div>
+    </main>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script>
+    /**
+     * SafeRoute SG — Interactive Bangalore Safety Navigator
+     * Parses bangalore_safety_data.json, renders Leaflet markers by tier,
+     * and powers sidebar search/filter + analytics panel.
+     */
+
+    // ─── Tier styling constants ───────────────────────────────────────────
+    const TIER_COLORS = {
+      'High Safety': '#10b981',
+      'Moderate Safety': '#f59e0b',
+      'Needs Improvement': '#fb7185',
+    };
+
+    const TIER_BADGE_CLASSES = {
+      'High Safety': 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+      'Moderate Safety': 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+      'Needs Improvement': 'bg-rose-500/20 text-rose-300 border border-rose-500/30',
+    };
+
+    const METRIC_LABELS = {
+      lighting: 'Street Lighting',
+      crowd_density: 'Crowd Density',
+      security_presence: 'Security Presence',
+    };
+
+    const METRIC_MAX = 5;
+
+    // Bangalore center coordinates
+    const BANGALORE_CENTER = [12.9716, 77.5946];
+    const DEFAULT_ZOOM = 11;
+
+    // ─── Application state ────────────────────────────────────────────────
+    let allLocations = [];
+    let activeFilter = 'all';
+    let searchQuery = '';
+    let selectedLocationId = null;
+    let map = null;
+    let markersLayer = null;
+    const markerRefs = {}; // id -> { marker, element }
+
+    // ─── DOM references ───────────────────────────────────────────────────
+    const els = {
+      searchInput: document.getElementById('search-input'),
+      locationList: document.getElementById('location-list'),
+      sidebarStatus: document.getElementById('sidebar-status'),
+      analyticsPanel: document.getElementById('analytics-panel'),
+      closePanel: document.getElementById('close-panel'),
+      panelName: document.getElementById('panel-location-name'),
+      panelTier: document.getElementById('panel-tier-badge'),
+      panelSafety: document.getElementById('panel-safety-score'),
+      panelAccess: document.getElementById('panel-access-score'),
+      safetyRing: document.getElementById('safety-ring'),
+      accessRing: document.getElementById('access-ring'),
+      panelReviews: document.getElementById('panel-reviews'),
+      mapHint: document.getElementById('map-hint'),
+      sidebar: document.getElementById('sidebar'),
+      sidebarToggle: document.getElementById('sidebar-toggle'),
+      filterPills: document.querySelectorAll('.filter-pill'),
+    };
+
+    // ─── Utility: tier color lookup ─────────────────────────────────────────
+    function getTierColor(tier) {
+      return TIER_COLORS[tier] || '#94a3b8';
+    }
+
+    /** Update SVG ring stroke-dasharray for 0–100 scores */
+    function setScoreRing(pathEl, score) {
+      const clamped = Math.max(0, Math.min(100, score));
+      pathEl.setAttribute('stroke-dasharray', `${clamped}, 100`);
+    }
+
+    /** Create a colored divIcon marker for Leaflet */
+    function createMarkerIcon(color, isActive = false) {
+      return L.divIcon({
+        className: '',
+        html: `<div class="safety-marker${isActive ? ' active' : ''}" style="background-color:${color}"></div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+      });
+    }
+
+    // ─── Initialize Leaflet map ─────────────────────────────────────────────
+    function initMap() {
+      map = L.map('map', {
+        zoomControl: true,
+        scrollWheelZoom: true,
+      }).setView(BANGALORE_CENTER, DEFAULT_ZOOM);
+
+      // Dark-friendly OpenStreetMap tiles (CartoDB Dark Matter — no API key)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19,
+      }).addTo(map);
+
+      markersLayer = L.layerGroup().addTo(map);
+      els.mapHint.classList.remove('hidden');
+    }
+
+    // ─── Render / refresh map markers based on filtered data ────────────────
+    function renderMarkers(locations) {
+      markersLayer.clearLayers();
+      Object.keys(markerRefs).forEach((k) => delete markerRefs[k]);
+
+      const bounds = [];
+
+      locations.forEach((loc) => {
+        const color = getTierColor(loc.tier);
+        const isActive = loc.id === selectedLocationId;
+        const icon = createMarkerIcon(color, isActive);
+
+        const marker = L.marker([loc.latitude, loc.longitude], { icon })
+          .bindTooltip(
+            `<strong>${loc.name}</strong><br/><span style="color:${color}">${loc.tier}</span> · Score ${loc.safety_score}`,
+            { direction: 'top', offset: [0, -8], className: 'text-xs' }
+          )
+          .on('click', () => selectLocation(loc.id));
+
+        marker.addTo(markersLayer);
+        markerRefs[loc.id] = { marker, loc };
+        bounds.push([loc.latitude, loc.longitude]);
+      });
+
+      // Fit map to visible markers when filtering
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [48, 48], maxZoom: 13 });
+      }
+    }
+
+    // ─── Filter locations by tier pill + search query ───────────────────────
+    function getFilteredLocations() {
+      return allLocations.filter((loc) => {
+        const matchesTier =
+          activeFilter === 'all' || loc.tier === activeFilter;
+        const matchesSearch =
+          !searchQuery ||
+          loc.name.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesTier && matchesSearch;
+      });
+    }
+
+    // ─── Render sidebar location list ───────────────────────────────────────
+    function renderLocationList(locations) {
+      els.locationList.innerHTML = '';
+
+      if (locations.length === 0) {
+        els.locationList.innerHTML =
+          '<li class="px-3 py-6 text-center text-sm text-slate-muted">No locations match your filters.</li>';
+        return;
+      }
+
+      locations.forEach((loc) => {
+        const color = getTierColor(loc.tier);
+        const isSelected = loc.id === selectedLocationId;
+        const li = document.createElement('li');
+        li.setAttribute('role', 'option');
+        li.setAttribute('aria-selected', isSelected);
+        li.dataset.id = loc.id;
+        li.className = [
+          'location-item cursor-pointer rounded-xl px-3 py-3 border transition',
+          isSelected
+            ? 'bg-midnight-800 border-midnight-600'
+            : 'bg-transparent border-transparent hover:bg-midnight-800/60 hover:border-midnight-700/50',
+        ].join(' ');
+
+        li.innerHTML = `
+          <div class="flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <p class="font-medium text-sm text-white truncate">${loc.name}</p>
+              <p class="text-[11px] text-slate-muted mt-0.5">${loc.tier}</p>
+            </div>
+            <div class="flex flex-col items-end flex-shrink-0">
+              <span class="w-2.5 h-2.5 rounded-full mb-1" style="background:${color}"></span>
+              <span class="font-mono text-xs font-semibold" style="color:${color}">${loc.safety_score}</span>
+            </div>
+          </div>
+        `;
+
+        li.addEventListener('click', () => {
+          selectLocation(loc.id);
+          // On mobile, close sidebar after selection
+          if (window.innerWidth < 768) {
+            els.sidebar.classList.add('-translate-x-full');
+          }
+        });
+
+        els.locationList.appendChild(li);
+      });
+    }
+
+    // ─── Populate Detailed Analytics / Location Insights panel ──────────────
+    function populateAnalyticsPanel(loc) {
+      const tierColor = getTierColor(loc.tier);
+
+      els.panelName.textContent = loc.name;
+      els.panelTier.textContent = loc.tier;
+      els.panelTier.className = `inline-block mt-2 px-2.5 py-0.5 rounded-full text-xs font-semibold ${TIER_BADGE_CLASSES[loc.tier] || ''}`;
+
+      els.panelSafety.textContent = loc.safety_score;
+      els.panelAccess.textContent = loc.accessibility_score;
+
+      els.safetyRing.setAttribute('stroke', tierColor);
+      els.accessRing.setAttribute('stroke', '#38bdf8');
+      setScoreRing(els.safetyRing, loc.safety_score);
+      setScoreRing(els.accessRing, loc.accessibility_score);
+
+      // Micro-metric progress bars (scale 1–5 → percentage)
+      const metricRows = document.querySelectorAll('.metric-row');
+      metricRows.forEach((row) => {
+        const key = row.dataset.metric;
+        const value = loc.metrics[key] ?? 0;
+        const pct = (value / METRIC_MAX) * 100;
+        row.querySelector('.metric-value').textContent = `${value} / ${METRIC_MAX}`;
+        const bar = row.querySelector('.metric-bar-fill');
+        // Reset then animate width
+        bar.style.width = '0%';
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            bar.style.width = `${pct}%`;
+          });
+        });
+      });
+
+      // Community reviews
+      els.panelReviews.innerHTML = loc.reviews
+        .map(
+          (r) =>
+            `<li class="flex gap-2"><span class="text-accent-emerald mt-0.5">•</span><span>${r}</span></li>`
+        )
+        .join('');
+
+      els.analyticsPanel.classList.remove('hidden');
+      els.mapHint.classList.add('hidden');
+    }
+
+    // ─── Select a location: sync list, marker, map fly, panel ───────────────
+    function selectLocation(id) {
+      selectedLocationId = id;
+      const loc = allLocations.find((l) => l.id === id);
+      if (!loc) return;
+
+      const filtered = getFilteredLocations();
+      renderLocationList(filtered);
+      renderMarkers(filtered);
+
+      // Fly map to selected pin
+      map.flyTo([loc.latitude, loc.longitude], 14, { duration: 0.8 });
+
+      populateAnalyticsPanel(loc);
+    }
+
+    // ─── Clear selection & hide panel ───────────────────────────────────────
+    function clearSelection() {
+      selectedLocationId = null;
+      els.analyticsPanel.classList.add('hidden');
+      els.mapHint.classList.remove('hidden');
+      const filtered = getFilteredLocations();
+      renderLocationList(filtered);
+      renderMarkers(filtered);
+    }
+
+    // ─── Master refresh: list + markers after filter/search change ──────────
+    function refreshUI() {
+      const filtered = getFilteredLocations();
+      renderLocationList(filtered);
+      renderMarkers(filtered);
+
+      // Re-show panel if selected location still visible
+      if (selectedLocationId) {
+        const stillVisible = filtered.some((l) => l.id === selectedLocationId);
+        if (stillVisible) {
+          const loc = allLocations.find((l) => l.id === selectedLocationId);
+          populateAnalyticsPanel(loc);
+        } else {
+          clearSelection();
+        }
+      }
+    }
+
+    // ─── Filter pill styling ────────────────────────────────────────────────
+    function updateFilterPillStyles() {
+      els.filterPills.forEach((pill) => {
+        const isActive = pill.dataset.filter === activeFilter;
+        pill.classList.toggle('active', isActive);
+        if (isActive) {
+          pill.className =
+            'filter-pill active px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-accent-emerald/20 text-emerald-300 border-emerald-500/40';
+        } else {
+          pill.className =
+            'filter-pill px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-midnight-800 text-slate-custom border-midnight-700 hover:border-midnight-600';
+        }
+      });
+    }
+
+    // ─── Load safety data from JSON ─────────────────────────────────────────
+    async function loadSafetyData() {
+      els.sidebarStatus.textContent = 'Loading safety data…';
+      els.sidebarStatus.classList.remove('hidden');
+
+      try {
+        const response = await fetch('bangalore_safety_data.json');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        allLocations = await response.json();
+        els.sidebarStatus.classList.add('hidden');
+        refreshUI();
+      } catch (err) {
+        console.error('Failed to load safety data:', err);
+        els.sidebarStatus.textContent =
+          'Could not load data. Serve this folder via a local server (e.g. npx serve).';
+        els.sidebarStatus.classList.remove('hidden');
+      }
+    }
+
+    // ─── Event bindings ─────────────────────────────────────────────────────
+    function bindEvents() {
+      // Search debounce-lite
+      els.searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value.trim();
+        refreshUI();
+      });
+
+      // Tier filter pills
+      els.filterPills.forEach((pill) => {
+        pill.addEventListener('click', () => {
+          activeFilter = pill.dataset.filter;
+          updateFilterPillStyles();
+          refreshUI();
+        });
+      });
+
+      els.closePanel.addEventListener('click', clearSelection);
+
+      // Mobile sidebar toggle
+      els.sidebarToggle.addEventListener('click', () => {
+        els.sidebar.classList.toggle('-translate-x-full');
+      });
+
+      // Close sidebar when clicking map on mobile
+      map.on('click', () => {
+        if (window.innerWidth < 768) {
+          els.sidebar.classList.add('-translate-x-full');
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        map.invalidateSize();
+      });
+    }
+
+    // ─── Boot ───────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      bindEvents();
+      updateFilterPillStyles();
+      loadSafetyData();
+    });
+  </script>
+</body>
+</html>
